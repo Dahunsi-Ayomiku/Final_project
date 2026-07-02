@@ -1,0 +1,70 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      String   @default("CUSTOMER") // "FARMER" or "CUSTOMER"
+  profile   Profile?
+  orders    Order[]
+  products  Product[] // Products listed by farmer
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Profile {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+  businessName String?
+  description String?
+  location    String?
+  coordinates String?
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  farmerId    String
+  farmer      User     @relation(fields: [farmerId], references: [id])
+  cropType    String
+  quantity    Float    // kg or tonnes
+  price       Float    // per unit
+  harvestDate DateTime?
+  qualityTier String?  // e.g., "Grade A", "Organic"
+  description String?
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  orderItems  OrderItem[]
+}
+
+model Order {
+  id          String   @id @default(uuid())
+  customerId  String
+  customer    User     @relation(fields: [customerId], references: [id])
+  status      String   @default("PENDING") // "PENDING", "PAID", "DELIVERED"
+  totalAmount Float
+  items       OrderItem[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Float
+  priceAtBuy Float
+}
